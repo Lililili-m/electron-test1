@@ -13,7 +13,6 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
 
 class AppUpdater {
   constructor() {
@@ -56,6 +55,21 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+/**
+ * 获取要加载的URL
+ * 开发环境：加载 react-test1 项目的开发服务器
+ * 生产环境：加载本地构建的文件
+ */
+const getLoadUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('开发环境');
+    return `http://localhost:5234`;
+  }
+  
+  // 生产环境：加载本地构建的文件
+  return `file://${path.resolve(__dirname, '../renderer/', 'index.html')}`;
+};
+
 const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
@@ -78,10 +92,74 @@ const createWindow = async () => {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
+      // 允许跨域，因为要加载外部服务器
+      webSecurity: false,
+      // 允许访问本地资源
+      allowRunningInsecureContent: true,
     },
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  // 加载 React 项目 URL
+  const loadUrl = getLoadUrl();
+  console.log(`🚀 正在加载: ${loadUrl}`);
+  
+  try {
+    await mainWindow.loadURL(loadUrl);
+    console.log('✅ 页面加载成功');
+  } catch (error) {
+    console.error('❌ 页面加载失败:', error);
+    // 如果加载失败，显示错误页面
+    const errorHtml = `
+      <html>
+        <head>
+          <title>加载失败</title>
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+              text-align: center; 
+              padding: 50px;
+              background: #f5f5f5;
+            }
+            .error-container {
+              background: white;
+              padding: 40px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              max-width: 500px;
+              margin: 0 auto;
+            }
+            h1 { color: #e74c3c; }
+            p { color: #666; margin: 20px 0; }
+            code { background: #f8f8f8; padding: 4px 8px; border-radius: 4px; }
+            .command { 
+              background: #2c3e50; 
+              color: #ecf0f1; 
+              padding: 10px; 
+              border-radius: 4px; 
+              font-family: monospace; 
+              margin: 10px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="error-container">
+            <h1>⚠️ 加载失败</h1>
+            <p>无法连接到 React 开发服务器（端口 5234）</p>
+            <p><strong>解决方案：</strong></p>
+            <p>1. 使用推荐的启动方式：</p>
+            <div class="command">pnpm run start:with-react</div>
+            <p>2. 或者手动启动 React 项目：</p>
+            <div class="command">cd ../react-test1 && PORT=5234 npm start</div>
+            <p>然后重启此 Electron 应用</p>
+          </div>
+        </body>
+      </html>
+    `;
+    await mainWindow.loadURL(`data:text/html,${encodeURIComponent(errorHtml)}`);
+  }
+  
+  // 确保窗口显示（即使加载失败也显示）
+  mainWindow.show();
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {

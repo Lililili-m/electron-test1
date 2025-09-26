@@ -239,11 +239,12 @@
       "onFail": "error"
     },
     "packageManager": {
-      "name": "npm",
+      "name": "pnpm",
       "version": ">=7.x",
       "onFail": "error"
     }
   },
+  "packageManager": "pnpm@9.0.0",
   "electronmon": {
     "patterns": [
       "!**/**",

@@ -24,41 +24,41 @@ src/
 确保已安装以下环境：
 
 - Node.js >= 14.x
-- npm >= 7.x
+- pnpm >= 7.x
 
 ## 安装与运行
 
 ### 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 开发模式
 
 ```bash
-npm start
+pnpm start
 ```
 
 ### 构建生产版本
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### 打包应用
 
 ```bash
-npm run package
+pnpm run package
 ```
 
 ## 可用脚本
 
-- `npm start` - 启动开发服务器
-- `npm run build` - 构建生产版本
-- `npm run package` - 打包应用程序
-- `npm run lint` - 运行代码检查
-- `npm run test` - 运行测试
+- `pnpm start` - 启动开发服务器
+- `pnpm run build` - 构建生产版本
+- `pnpm run package` - 打包应用程序
+- `pnpm run lint` - 运行代码检查
+- `pnpm run test` - 运行测试
 
 ## 特性
 

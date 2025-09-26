@@ -112,6 +112,7 @@ const createWindow = async () => {
     const errorHtml = `
       <html>
         <head>
+          <meta charset="utf-8" />
           <title>加载失败</title>
           <style>
             body { 
@@ -155,7 +156,7 @@ const createWindow = async () => {
         </body>
       </html>
     `;
-    await mainWindow.loadURL(`data:text/html,${encodeURIComponent(errorHtml)}`);
+    await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
   }
   
   // 确保窗口显示（即使加载失败也显示）

@@ -13,6 +13,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
+import { resolveHtmlPath } from './util';
 
 class AppUpdater {
   constructor() {
@@ -108,55 +109,17 @@ const createWindow = async () => {
     console.log('✅ 页面加载成功');
   } catch (error) {
     console.error('❌ 页面加载失败:', error);
-    // 如果加载失败，显示错误页面
-    const errorHtml = `
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>加载失败</title>
-          <style>
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-              text-align: center; 
-              padding: 50px;
-              background: #f5f5f5;
-            }
-            .error-container {
-              background: white;
-              padding: 40px;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-              max-width: 500px;
-              margin: 0 auto;
-            }
-            h1 { color: #e74c3c; }
-            p { color: #666; margin: 20px 0; }
-            code { background: #f8f8f8; padding: 4px 8px; border-radius: 4px; }
-            .command { 
-              background: #2c3e50; 
-              color: #ecf0f1; 
-              padding: 10px; 
-              border-radius: 4px; 
-              font-family: monospace; 
-              margin: 10px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="error-container">
-            <h1>⚠️ 加载失败</h1>
-            <p>无法连接到 React 开发服务器（端口 5234）</p>
-            <p><strong>解决方案：</strong></p>
-            <p>1. 使用推荐的启动方式：</p>
-            <div class="command">pnpm run start:with-react</div>
-            <p>2. 或者手动启动 React 项目：</p>
-            <div class="command">cd ../react-test1 && PORT=5234 npm start</div>
-            <p>然后重启此 Electron 应用</p>
-          </div>
-        </body>
-      </html>
-    `;
-    await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
+    // 加载失败时，跳转到错误页面路由
+    console.log('🔄 正在加载错误页面...');
+    try {
+      // 尝试加载本地构建的错误页面
+      await mainWindow.loadURL(resolveHtmlPath('index.html'));
+      console.log('✅ 错误页面加载成功');
+    } catch (fallbackError) {
+      console.error('❌ 错误页面也加载失败', fallbackError);
+      // 最后的降级方案：使用内联HTML
+      await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getInnerErrorPage())}`);
+    }
   }
   
   // 确保窗口显示（即使加载失败也显示）
@@ -189,6 +152,55 @@ const createWindow = async () => {
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();
+};
+
+const getInnerErrorPage = () => {
+  const errorHtml = `
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>加载失败</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+                text-align: center; 
+                padding: 50px;
+                background: #f5f5f5;
+              }
+              .error-container {
+                background: white;
+                padding: 40px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                max-width: 500px;
+                margin: 0 auto;
+              }
+              h1 { color: #e74c3c; }
+              p { color: #666; margin: 20px 0; }
+              .command { 
+                background: #2c3e50; 
+                color: #ecf0f1; 
+                padding: 10px; 
+                border-radius: 4px; 
+                font-family: monospace; 
+                margin: 10px 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="error-container">
+              <h1>⚠️ 严重错误</h1>
+              <p>React 项目和 Electron 渲染进程都无法加载</p>
+              <p><strong>解决方案：</strong></p>
+              <p>1. 确保已构建渲染进程：</p>
+              <div class="command">npm run build:renderer</div>
+              <p>2. 或启动开发模式：</p>
+              <div class="command">cd ../react-test1 && PORT=5234 npm start</div>
+            </div>
+          </body>
+        </html>
+      `;
+  return errorHtml;
 };
 
 /**
